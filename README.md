@@ -1,6 +1,4 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
 # shmanipulate
 
 <!-- badges: start -->
@@ -82,4 +80,20 @@ shmanipulate({ x = 0:100; plot(A * x^2 + B * x + C, ylim = c(-2000, 2000)) },
     B = c(0, 10, 0.25),       # slider from 0 to 10, with step 0.25
     C = c(0, -1000, 1000, 50) # slider from -1000 to 1000, with starting value 0 and step 50
 )
+```
+
+### shmanipulate + curve: a delicious pairing
+
+Base R provides the function `curve` to quickly plot the value of a expression over a range of values in a variable `x`.
+
+``` r
+shmanipulate(curve(dbeta(x, alpha, beta), 0, 1), alpha = c(1, 100), beta = c(1, 100))
+```
+
+### Maybe you like histograms?
+
+``` r
+data(quakes)
+shmanipulate(if (y == "-") hist(quakes[[x]], xlab = x) else plot(quakes[[x]], quakes[[y]], xlab = x, ylab = y), 
+    x = names(quakes), y = c("-", names(quakes)))
 ```
