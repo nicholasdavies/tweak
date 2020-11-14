@@ -3,16 +3,17 @@ parse_control = function(x)
 {
     if ("shiny.tag" %in% class(x)) {
         x
-    } else if (is.list(x)) {
-        list(type = "select", choices = x, init = NULL)
+    } else if (is.list(x) | (length(x) > 1 & is.character(x))) {
+        values = unname(x);
+        choices = as.character(seq_along(x));
+        names(choices) = if (!is.null(names(x))) names(x) else as.character(x);
+        list(type = "select", choices = choices, values = values, init = NULL)
     } else if (length(x) == 1 & is.logical(x)) {
         list(type = "checkbox", init = x)
     } else if (length(x) == 1 & is.numeric(x)) {
         list(type = "numeric", init = x)
     } else if (length(x) == 1 & is.character(x)) {
         list(type = "text", init = x)
-    } else if (length(x) > 1 & is.character(x)) {
-        list(type = "select", choices = as.list(x), init = NULL)
     } else if (length(x) == 1 & class(x) == "Date") {
         list(type = "date", init = x)
     } else if (is.numeric(x)) {
@@ -187,7 +188,7 @@ pad_options = function(options, ...)
 #'         \code{min} and \code{max}; you can optionally provide a
 #'         starting value before \code{min} and/or a step value after
 #'         \code{max} (see examples).}
-#'         \item{\code{y = list(...)} for a fixed set of string options
+#'         \item{\code{y = list(...)} for a fixed set of options
 #'         in a dropdown menu. If the \code{list} has names, these will
 #'         be shown. The first element is selected by default. For
 #'         convenience, a character vector with more than one element
@@ -224,7 +225,7 @@ pad_options = function(options, ...)
 #' @examples
 #' \dontrun{
 #' # Specifying controls: the easy way
-#' shmanipulate( { x = 0:10; plot(A * x^2 + B * x + as.numeric(C), col = if(blue) 4 else 1, main = plot_title, ylim = c(-5, 10)) },
+#' shmanipulate( { x = 0:10; plot(A * x^2 + B * x + C, col = if(blue) 4 else 1, main = plot_title, ylim = c(-5, 10)) },
 #'     A = c(0, 0.1), # a slider from 0 to 0.1
 #'     B = 1,       # a numeric text input with starting value 1
 #'     C = list(one = 1, two = 2, three = 3), # a dropdown list with named values
@@ -289,7 +290,10 @@ shmanipulate = function(expr, ..., options = list(), .envir = parent.frame())
     args = lapply(args, parse_control);
     controls = mapply(realize_control, names(args), args, SIMPLIFY = FALSE);
     arg_names = unname(sapply(controls, get_input_id));
-    arg_names = arg_names[!sapply(arg_names, is.null)];
+
+    if (any(is.null(arg_names))) {
+        stop("shmanipulate: could not find names for all parameters.");
+    }
 
     # Define page layout
     ui = shiny::fluidPage(layout(controls, options$ncol, options$position));
@@ -299,8 +303,18 @@ shmanipulate = function(expr, ..., options = list(), .envir = parent.frame())
     server = function(input, output, session)
     {
         output$plot = shiny::renderPlot({
+            # get server values
             args2 = lapply(arg_names, function(name) input[[name]]);
             names(args2) = arg_names;
+
+            # convert dropdown list values from character to originally specified type
+            for (i in seq_along(args)) {
+                if (!"shiny.tag" %in% class(args[[i]]) && args[[i]]$type == "select") {
+                    args2[[i]] = args[[i]]$values[[as.integer(args2[[i]])]];
+                }
+            }
+
+            # evaluate plotting command
             eval(parse(text = expr_txt), args2, .envir)
         });
     }
