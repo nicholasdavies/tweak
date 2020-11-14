@@ -7,14 +7,32 @@
 
 <!-- badges: end -->
 
-Easily manipulate a plot using controls like sliders, drop-down lists
-and date pickers.
+Easily manipulate a plot using controls like sliders, drop-down lists and date pickers.
 
-*shmanipulate* uses Shiny for plot manipulation, hence the name.
+There are other packages for doing this, like [manipulate](https://www.rdocumentation.org/packages/manipulate/versions/1.0.1)
+and [manipulateWidget](https://cran.r-project.org/web/packages/manipulateWidget/vignettes/manipulateWidgets.html). I found that
+with `manipulate` I would sometimes run out of space for controls when there were lots of variables; `manipulateWidget` was better 
+for this, but for both packages I found the syntax a bit hard to remember, especially during what I found to be the most common use 
+cases for manipulating plots, i.e. diagnosing errors and trying out some new code (when I didn't want to be diving into documentation).
+
+`shmanipulate`'s syntax is supposed to be a bit easier to remember. The package only exports one function (also called `shmanipulate`), 
+and uses what I find to be a natural "shorthand" syntax for specifying controls for plot manipulation, e.g. `x = c(0, 1)` to control 
+the variable `x` using a numeric slider going from 0 to 1, or `y = list("dog", "cat")` to control the variable `y` using a dropdown 
+list with two options. The basic syntax looks like this:
+
+``` r
+shmanipulate({
+   # plotting code goes here...
+   }, x = c(0, 1), y = list("dog", "cat")
+)
+```
+
+`shmanipulate` uses Shiny for plot manipulation, hence the name. If you want more control over plot manipulation, you can pass Shiny 
+widgets to the function instead of using the "shorthand" named arguments (see below).
 
 ## Installation
 
-You can install *shmanipulate* from GitHub with:
+You can install `shmanipulate` from GitHub using:
 
 ``` r
 remotes::install_github("nicholasdavies/shmanipulate")
@@ -22,8 +40,7 @@ remotes::install_github("nicholasdavies/shmanipulate")
 
 ## Quick examples
 
-See `?shmanipulate` for full
-documentation.
+See `?shmanipulate` for full documentation.
 
 ### Specifying controls: the easy way
 
