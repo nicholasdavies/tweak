@@ -1,11 +1,13 @@
 Package: shmanipulate
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Easily manipulate a plot using controls like sliders, drop-down lists and date pickers.
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R: person("Nicholas G.", "Davies", email = "nicholas.davies@lshtm.ac.uk", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-1740-1412"))
+Description: A function for manipulating a plot from within RStudio or another Shiny-compatible R environment,
+    which uses an easy-to-remember syntax for specifying how to manipulate different variables.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+RoxygenNote: 7.1.0
+Imports: 
+    shiny

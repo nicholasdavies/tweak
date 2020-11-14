@@ -1,25 +1,3 @@
-# Hello, world!
-#
-# This is an example function named 'hello'
-# which prints 'Hello, world!'.
-#
-# You can learn more about package authoring with RStudio at:
-#
-#   http://r-pkgs.had.co.nz/
-#
-# Some useful keyboard shortcuts for package authoring:
-#
-#   Install Package:           'Cmd + Shift + B'
-#   Check Package:             'Cmd + Shift + E'
-#   Test Package:              'Cmd + Shift + T'
-
-hello <- function() {
-  print("Hello, world!")
-}
-
-
-library(shiny)
-
 # Interpret x as control spec
 parse_control = function(x)
 {
@@ -33,7 +11,7 @@ parse_control = function(x)
         list(type = "numeric", init = x)
     } else if (length(x) == 1 & is.character(x)) {
         list(type = "text", init = x)
-    } else if (length(x) == 1 & is.Date(x)) {
+    } else if (length(x) == 1 & class(x) == "Date") {
         list(type = "date", init = x)
     } else if (is.numeric(x)) {
         parse_slider(x)
@@ -106,23 +84,23 @@ gridify = function(controls, ncol, position)
 {
     if (position %in% c("top", "bottom")) {
         if (ncol == 1) {
-            column(4, controls, offset = 4)
+            shiny::column(4, controls, offset = 4)
         } else if (ncol == 2) {
             list(
-                column(4, slice(controls, 0, 1, 2), offset = 2),
-                column(4, slice(controls, 1, 2, 2))
+                shiny::column(4, slice(controls, 0, 1, 2), offset = 2),
+                shiny::column(4, slice(controls, 1, 2, 2))
             )
         } else if (ncol == 3) {
             list(
-                column(4, slice(controls, 0, 1, 3)),
-                column(4, slice(controls, 1, 2, 3)),
-                column(4, slice(controls, 2, 3, 3))
+                shiny::column(4, slice(controls, 0, 1, 3)),
+                shiny::column(4, slice(controls, 1, 2, 3)),
+                shiny::column(4, slice(controls, 2, 3, 3))
             )
         } else {
             stop("shmanipulate: ncol must be 1, 2, or 3.");
         }
     } else if (position %in% c("left", "right")) {
-        column(4, controls)
+        shiny::column(4, controls)
     }
 }
 
@@ -131,22 +109,22 @@ layout = function(controls, ncol, position)
 {
     if (position == "top") {
         list(
-            fluidRow(gridify(controls, ncol, position)),
-            fluidRow(plotOutput("plot"))
+            shiny::fluidRow(gridify(controls, ncol, position)),
+            shiny::fluidRow(shiny::plotOutput("plot"))
         )
     } else if (position == "bottom") {
         list(
-            fluidRow(plotOutput("plot")),
-            fluidRow(gridify(controls, ncol, position))
+            shiny::fluidRow(shiny::plotOutput("plot")),
+            shiny::fluidRow(gridify(controls, ncol, position))
         )
     } else if (position == "left") {
-        fluidRow(
+        shiny::fluidRow(
             gridify(controls, ncol, position),
-            column(8, plotOutput("plot"))
+            shiny::column(8, shiny::plotOutput("plot"))
         )
     } else if (position == "right") {
-        fluidRow(
-            column(8, plotOutput("plot")),
+        shiny::fluidRow(
+            shiny::column(8, shiny::plotOutput("plot")),
             gridify(controls, ncol, position)
         )
     } else {
@@ -160,17 +138,17 @@ realize_control = function(name, x)
     if ("shiny.tag" %in% class(x)) {
         x
     } else if (x$type == "select") {
-        selectInput(inputId = name, label = name, choices = x$choices, selected = x$init);
+        shiny::selectInput(inputId = name, label = name, choices = x$choices, selected = x$init);
     } else if (x$type == "checkbox") {
-        checkboxInput(inputId = name, label = name, value = x$init);
+        shiny::checkboxInput(inputId = name, label = name, value = x$init);
     } else if (x$type == "numeric") {
-        numericInput(inputId = name, label = name, value = x$init);
+        shiny::numericInput(inputId = name, label = name, value = x$init);
     } else if (x$type == "text") {
-        textInput(inputId = name, label = name, value = x$init);
+        shiny::textInput(inputId = name, label = name, value = x$init);
     } else if (x$type == "date") {
-        dateInput(inputId = name, label = name, value = x$init);
+        shiny::dateInput(inputId = name, label = name, value = x$init);
     } else if (x$type == "slider") {
-        sliderInput(inputId = name, label = name, min = x$min, max = x$max, value = x$init, step = ifelse(x$by == 0, NULL, x$by))
+        shiny::sliderInput(inputId = name, label = name, min = x$min, max = x$max, value = x$init, step = ifelse(x$by == 0, NULL, x$by))
     } else {
         stop("shmanipulate: unknown control type.");
     }
@@ -188,10 +166,93 @@ pad_options = function(options, ...)
     return (options)
 }
 
-# Manipulate plot
-# TODO: put options into list
-# TODO: just have numeric output
-shmanipulate = function(expr, ..., options)
+#' Manipulate a plot
+#'
+#' Easily manipulate a plot using controls like sliders, drop-down lists and
+#' date pickers.
+#'
+#' @param expr an expression that evaluates to a plot using base plotting
+#' functions, \code{ggplot}, etc.
+#' @param ... variables within the \code{expr} expression to be manipulated.
+#'   These can be specified in one of two ways:
+#'   \describe{
+#'     \item{\strong{The easy way}}{The easy way is to specify the variables
+#'     to be manipulated as named arguments to \code{shmanipulate}. How you
+#'     specify the value of each argument determines the default value of the
+#'     variable and how it is manipulated. Examples for each:
+#'       \itemize{
+#'         \item{\code{x = c(min, max)} for a numeric slider between
+#'         \code{min} and \code{max}; you can optionally provide a
+#'         starting value before \code{min} and/or a step value after
+#'         \code{max} (see examples).}
+#'         \item{\code{y = list(...)} for a fixed set of string options
+#'         in a dropdown menu. If the \code{list} has names, these will
+#'         be shown. The first element is selected by default.}
+#'         \item{\code{z = TRUE} or \code{z = FALSE} for a
+#'         logical value controlled by a checkbox.}
+#'         \item{\code{foo = "Some text"} for a character
+#'         string controlled by text input.}
+#'         \item{\code{bar = 123.456} for a numeric value
+#'         controlled by text input.}
+#'         \item{\code{baz = as.Date("2020-01-01")} for a
+#'         \code{Date} object with a calendar input.}
+#'       }
+#'     See below for an example.
+#'     }
+#'     \item{\strong{The more flexible way}}{The more flexible way
+#'     is to specify the variables to be manipulated as input controls
+#'     using the \code{shiny} package. In this case the names of the
+#'     arguments are ignored, and the variable names are taken from
+#'     the \code{inputId} argument to the Shiny input control. An
+#'     example is below. }
+#'   }
+#' @param options a \code{list} containing further settings:
+#' \describe{
+#'   \item{\code{position}}{where the controls are positioned relative to the
+#'   plot; either \code{"bottom"} (default), \code{"top"}, \code{"left"}, or
+#'   \code{"right"}.}
+#'   \item{\code{ncol}}{if \code{position} is \code{"top"} or \code{"bottom"},
+#'   the number of columns to distribute controls across; can be \code{1} (default),
+#'   \code{2}, or \code{3}.}
+#' }
+#'
+#' @export
+#' @examples
+#' \dontrun{
+#' # Specifying controls: the easy way
+#' shmanipulate( { x = 0:10; plot(A * x^2 + B * x + as.numeric(C), col = if(blue) 4 else 1, main = plot_title, ylim = c(-5, 10)) },
+#'     A = c(0, 0.1), # a slider from 0 to 0.1
+#'     B = 1,       # a numeric text input with starting value 1
+#'     C = list(one = 1, two = 2, three = 3), # a dropdown list with named values
+#'     plot_title = "Example title", # freeform text input
+#'     blue = FALSE                  # checkbox
+#' )
+#'
+#' # Specifying controls: the flexible way
+#' library(shiny)
+#' library(ggplot2)
+#'
+#' shmanipulate({
+#'         dat = data.frame(date = start_date + 0:(n_days - 1),
+#'             value = start_value * exp(0:(n_days - 1) * growth_rate) + rnorm(n_days, 0, noise));
+#'         ggplot(dat) +
+#'             geom_line(aes(x = date, y = value))
+#'     },
+#'     dateInput(inputId = "start_date", label = "Start date", value = "2020-01-01"),
+#'     numericInput(inputId = "start_value", label = "Starting value", value = 1, min = 0, max = 10, step = 1),
+#'     sliderInput(inputId = "growth_rate", label = "Growth rate", min = 0, max = 1, value = 0, step = 0.01),
+#'     numericInput(inputId = "n_days", label = "Number of days", value = 30, min = 1, max = 60, step = 1),
+#'     sliderInput(inputId = "noise", label = "Noise", min = 0, max = 1, value = 0, step = 0.01)
+#' )
+#'
+#' # Different kinds of numeric sliders
+#' shmanipulate({ x = 0:100; plot(A * x^2 + B * x + C, ylim = c(-2000, 2000)) },
+#'     A = c(0.5, 0, 1),         # slider from 0 to 1, with starting value 0.5
+#'     B = c(0, 10, 0.25),       # slider from 0 to 10, with step 0.25
+#'     C = c(0, -1000, 1000, 50) # slider from -1000 to 1000, with starting value 0 and step 50
+#' )
+#' }
+shmanipulate = function(expr, ..., options = list(), .envir = parent.frame())
 {
     # Process options
     options = pad_options(options,
@@ -199,73 +260,39 @@ shmanipulate = function(expr, ..., options)
         position = "bottom"
     );
 
+    # Read named and unnamed (list) arguments
+    ellipses = list(...);
+    args = list();
+    for (i in seq_along(ellipses)) {
+        if (!is.null(names(ellipses)) && names(ellipses)[i] != "") {
+            args = c(args, list(ellipses[[i]]));
+            names(args)[i] = names(ellipses)[i];
+        } else {
+            args = c(args, list(ellipses[[i]]));
+            names(args)[i] = ""
+        }
+    }
+
     # Turn ... arguments into input controls
-    args = lapply(list(...), parse_control);
+    args = lapply(args, parse_control);
     controls = mapply(realize_control, names(args), args, SIMPLIFY = FALSE);
     arg_names = unname(sapply(controls, get_input_id));
     arg_names = arg_names[!sapply(arg_names, is.null)];
 
-    print(arg_names)
-
     # Define page layout
-    ui = fluidPage(layout(controls, options$ncol, options$position));
+    ui = shiny::fluidPage(layout(controls, options$ncol, options$position));
 
     # Simple server to render plot based on updates to inputs
     expr_txt = deparse(substitute(expr));
     server = function(input, output, session)
     {
-        output$plot = renderPlot({
+        output$plot = shiny::renderPlot({
             args2 = lapply(arg_names, function(name) input[[name]]);
             names(args2) = arg_names;
-            eval(parse(text = expr_txt), args2)
+            eval(parse(text = expr_txt), args2, .envir)
         });
     }
 
     # Run app
-    shinyApp(ui, server)
+    shiny::shinyApp(ui, server)
 }
-
-# to test
-# X check if works with all shiny input types
-# X check if works with no ...
-# X check if works with ggplot
-
-shmanipulate( { plot(0:100, ifelse(flip, -1, 1) * m*(0:100) + b, col = colour, pch = plot_letter); title(main = plot_title) },
-    m = c(0, -2, 2),
-    dateInput("b", "Start date", "2020-01-01"),
-    actionButton("flip", "Flip"),
-    colour = as.list(1:8),
-    plot_title = "Title",
-    selectInput("plot_letter", "Which letter", letters),
-    submitButton("Apply"),
-    options = list(position = "right"))
-
-shmanipulate( { d = data.frame(x = 0:100, y = m + sin(b * (0:100))); ggplot(d) + geom_line(aes(x, y)) },
-    m = c(0, -2, 2), b = 0, flip = FALSE, colour = as.list(1:8), plot_title = "Title",
-    selectInput("plot_letter", "A label", letters),
-    options = list(position = "right"))
-
-shmanipulate( plot(0:100, sin((0:100)), col = 4, pch = "s"),
-    options = list(position = "right"))
-
-
-# shmanipulate(function(x, y) { plot(x, y) }, x = c(1, 2), y = c(1, 2, 1))
-
-# # single editable inputs
-# x = 1 # short edit
-# x = "foo" # short edit
-# x = TRUE # checkbox
-#
-# # drop down list
-# x = list(1, 2, 3, 4, 5) # unnamed
-# x = list(a = 1, b = 2, c = 3, d = 4, e = 5) # named
-#
-# # range input
-# x = c(1, 5) # min, max
-# x = c(1, 5, 1) # min, max, by
-# x = c(2.5, 1, 5) # start, min, max
-# x = c(2.5, 1, 5, 1) # start, min, max, by
-#
-# # button
-# "Go"
-
