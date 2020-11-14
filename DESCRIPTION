@@ -11,3 +11,5 @@ LazyData: true
 RoxygenNote: 7.1.0
 Imports: 
     shiny
+URL: https://github.com/nicholasdavies/shmanipulate
+BugReports: https://github.com/nicholasdavies/shmanipulate/issues
