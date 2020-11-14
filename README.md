@@ -74,6 +74,11 @@ shmanipulate({
 
 ### Different kinds of numeric sliders
 
+The full syntax for numeric sliders is `c(start_value, min, max, step_size)` where `start_value` and `step_size` are optional. 
+This seems like it would create ambiguous cases—since if you provide three values, they could either be `c(start_value, min, max)` 
+or `c(min, max, step_size)`—but since `shmanipulate` assumes `start_value >= min` and `min < max`, it's always possible 
+for `shmanipulate` to tell which of these two cases is intended.
+
 ``` r
 shmanipulate({ x = 0:100; plot(A * x^2 + B * x + C, ylim = c(-2000, 2000)) },
     A = c(0.5, 0, 1),         # slider from 0 to 1, with starting value 0.5
@@ -91,6 +96,8 @@ shmanipulate(curve(dbeta(x, alpha, beta), 0, 1), alpha = c(1, 100), beta = c(1, 
 ```
 
 ### Maybe you like histograms?
+
+This usage can be handy for looking at samples from a posterior distribution.
 
 ``` r
 data(quakes)
