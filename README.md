@@ -75,8 +75,8 @@ shmanipulate({
 ### Different kinds of numeric sliders
 
 The full syntax for numeric sliders is `c(start_value, min, max, step_size)` where `start_value` and `step_size` are optional. 
-This seems like it would create ambiguous cases--since if you provide three values, they could either be `c(start_value, min, max)` 
-or `c(min, max, step_size)`--but since `shmanipulate` assumes `start_value >= min` and `min < max`, it's always possible 
+This seems like it would create ambiguous cases—since if you provide three values, they could either be `c(start_value, min, max)` 
+or `c(min, max, step_size)`—but since `shmanipulate` assumes `start_value >= min` and `min < max`, it's always possible 
 for `shmanipulate` to tell which of these two cases is intended.
 
 ``` r
