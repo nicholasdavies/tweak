@@ -94,6 +94,6 @@ shmanipulate(curve(dbeta(x, alpha, beta), 0, 1), alpha = c(1, 100), beta = c(1, 
 
 ``` r
 data(quakes)
-shmanipulate(if (y == "-") hist(quakes[[x]], xlab = x) else plot(quakes[[x]], quakes[[y]], xlab = x, ylab = y), 
-    x = names(quakes), y = c("-", names(quakes)))
+shmanipulate(if (x == y) hist(quakes[[x]], xlab = x) else plot(quakes[[x]], quakes[[y]], xlab = x, ylab = y), 
+    x = names(quakes), y = names(quakes))
 ```
