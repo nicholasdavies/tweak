@@ -45,8 +45,10 @@ See `?shmanipulate` for full documentation.
 
 ### Specifying controls: the easy way
 
+Here's an example of using `shmanipulate` with a few different basic control types.
+
 ``` r
-shmanipulate( { x = 0:10; plot(A * x^2 + B * x + as.numeric(C), col = if(blue) 4 else 1, main = plot_title, ylim = c(-5, 10)) },
+shmanipulate( { x = 0:10; plot(A * x^2 + B * x + C, col = if(blue) 4 else 1, main = plot_title, ylim = c(-5, 10)) },
     A = c(0, 0.1), # a slider from 0 to 0.1
     B = 1,         # a numeric text input with starting value 1
     C = list(one = 1, two = 2, three = 3), # a dropdown list with named values
@@ -54,6 +56,14 @@ shmanipulate( { x = 0:10; plot(A * x^2 + B * x + as.numeric(C), col = if(blue) 4
     blue = FALSE                  # checkbox
 )
 ```
+
+In full, you can use:
+- `x = c(min, max)` for a numeric slider between min and max; you can optionally provide a starting value before min and/or a step value after max (see "Different kinds of numeric sliders" below).
+- `y = list(...)` for a fixed set of options in a dropdown menu. If the list has names, these will be shown; otherwise, the list values converted to character are shown. The first element is selected by default. For convenience, a vector of strings with more than one element (e.g. `c("one", "two")`) will also be interpreted as a dropdown menu. 
+- `z = TRUE` or `z = FALSE` for a logical value controlled by a checkbox.
+- `foo = "Some text"` for a character string controlled by text input.
+- `bar = 123.456` for a numeric value controlled by text input.
+- `baz = as.Date("2020-01-01")` for a Date object with a calendar input.
 
 ### Specifying controls: the flexible way
 
@@ -87,7 +97,8 @@ shmanipulate({ x = 0:100; plot(A * x^2 + B * x + C, ylim = c(-2000, 2000)) },
 
 ### shmanipulate + curve: a delicious pairing
 
-Base R provides the function `curve` to quickly plot the value of a expression over a range of values in a variable `x`.
+Base R provides the function `curve` to quickly plot the value of an expression over a range of values in a variable `x`.
+This can be paired with `shmanipulate` for a quick way of familiarising yourself with how a function behaves.
 
 ``` r
 shmanipulate(curve(dbeta(x, alpha, beta), 0, 1), alpha = c(1, 100), beta = c(1, 100))
