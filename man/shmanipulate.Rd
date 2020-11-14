@@ -2,9 +2,12 @@
 % Please edit documentation in R/shmanipulate.R
 \name{shmanipulate}
 \alias{shmanipulate}
+\alias{shmanip}
 \title{Manipulate a plot}
 \usage{
 shmanipulate(expr, ..., options = list(), .envir = parent.frame())
+
+shmanip(expr, ..., options = list(), .envir = parent.frame())
 }
 \arguments{
 \item{expr}{an expression that evaluates to a plot using base plotting
@@ -22,7 +25,7 @@ These can be specified in one of two ways:
       \code{min} and \code{max}; you can optionally provide a
       starting value before \code{min} and/or a step value after
       \code{max} (see examples).}
-      \item{\code{y = list(...)} for a fixed set of string options
+      \item{\code{y = list(...)} for a fixed set of options
       in a dropdown menu. If the \code{list} has names, these will
       be shown. The first element is selected by default. For
       convenience, a character vector with more than one element
@@ -49,21 +52,30 @@ These can be specified in one of two ways:
 \item{options}{a \code{list} containing further settings:
 \describe{
   \item{\code{position}}{where the controls are positioned relative to the
-  plot; either \code{"bottom"} (default), \code{"top"}, \code{"left"}, or
-  \code{"right"}.}
+  plot; either \code{"bottom"} (default for \code{shmanipulate}), \code{"top"},
+  \code{"left"} (default for \code{shmanip}), or \code{"right"}.}
   \item{\code{ncol}}{if \code{position} is \code{"top"} or \code{"bottom"},
   the number of columns to distribute controls across; can be \code{1} (default),
   \code{2}, or \code{3}.}
+  \item{\code{gadget}}{\code{FALSE} (default for \code{shmanipulate}) to run in a
+  new window, or \code{TRUE} (default for \code{shmanip}) to run as a gadget, i.e.
+  in the RStudio viewer pane.}
 }}
 }
 \description{
 Easily manipulate a plot using controls like sliders, drop-down lists and
 date pickers.
 }
+\details{
+\code{shmanip} and \code{shmanipulate} do the same thing, but \code{shmanip}
+runs as a gadget (i.e. in the RStudio Viewer pane) by default and with
+controls on the left of the plot, while \code{shmanipulate} runs in a new
+window by default and with controls on the bottom.
+}
 \examples{
 \dontrun{
 # Specifying controls: the easy way
-shmanipulate( { x = 0:10; plot(A * x^2 + B * x + as.numeric(C), col = if(blue) 4 else 1, main = plot_title, ylim = c(-5, 10)) },
+shmanipulate( { x = 0:10; plot(A * x^2 + B * x + C, col = if(blue) 4 else 1, main = plot_title, ylim = c(-5, 10)) },
     A = c(0, 0.1), # a slider from 0 to 0.1
     B = 1,       # a numeric text input with starting value 1
     C = list(one = 1, two = 2, three = 3), # a dropdown list with named values

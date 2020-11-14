@@ -7,13 +7,13 @@
 
 Easily manipulate a plot using controls like sliders, drop-down lists and date pickers.
 
-There are other packages for doing this, like [manipulate](https://www.rdocumentation.org/packages/manipulate/versions/1.0.1)
-and [manipulateWidget](https://cran.r-project.org/web/packages/manipulateWidget/vignettes/manipulateWidgets.html). I found that
-with `manipulate` I would sometimes run out of space for controls when there were lots of variables; `manipulateWidget` was better 
+There are other packages for doing this, like [**manipulate**](https://www.rdocumentation.org/packages/manipulate/versions/1.0.1)
+and [**manipulateWidget**](https://cran.r-project.org/web/packages/manipulateWidget/vignettes/manipulateWidgets.html). I found that
+with **manipulate** I would sometimes run out of space for controls when there were lots of variables; **manipulateWidget** was better 
 for this, but for both packages I found the syntax a bit hard to remember, especially during what I found to be the most common use 
 cases for manipulating plots, i.e. diagnosing errors and trying out some new code (when I didn't want to be diving into documentation).
 
-`shmanipulate`'s syntax is supposed to be a bit easier to remember. The package only exports one function (also called `shmanipulate`), 
+**shmanipulate**'s syntax is supposed to be a bit easier to remember. The package only exports one function* (also called `shmanipulate`), 
 and uses what I find to be a natural "shorthand" syntax for specifying controls for plot manipulation, e.g. `x = c(0, 1)` to control 
 the variable `x` using a numeric slider going from 0 to 1, or `y = list("dog", "cat")` to control the variable `y` using a dropdown 
 list with two options. The basic syntax looks like this:
@@ -25,12 +25,15 @@ shmanipulate({
 )
 ```
 
-`shmanipulate` uses Shiny for plot manipulation, hence the name. If you want more control over plot manipulation, you can pass Shiny 
+**shmanipulate** uses Shiny for plot manipulation, hence the name. If you want more control over plot manipulation, you can pass Shiny 
 widgets to the function instead of using the "shorthand" named arguments (see below).
+
+\* OK, I lied. **shmanipulate** also exports a second function, `shmanip`, which runs in the RStudio Viewer pane by default rather
+than in a new window. And it saves five keystrokes, meaning your productivity will nearly double!
 
 ## Installation
 
-You can install `shmanipulate` from GitHub using:
+You can install **shmanipulate** from GitHub using:
 
 ``` r
 remotes::install_github("nicholasdavies/shmanipulate")
@@ -74,11 +77,6 @@ shmanipulate({
 
 ### Different kinds of numeric sliders
 
-The full syntax for numeric sliders is `c(start_value, min, max, step_size)` where `start_value` and `step_size` are optional. 
-This seems like it would create ambiguous cases—since if you provide three values, they could either be `c(start_value, min, max)` 
-or `c(min, max, step_size)`—but since `shmanipulate` assumes `start_value >= min` and `min < max`, it's always possible 
-for `shmanipulate` to tell which of these two cases is intended.
-
 ``` r
 shmanipulate({ x = 0:100; plot(A * x^2 + B * x + C, ylim = c(-2000, 2000)) },
     A = c(0.5, 0, 1),         # slider from 0 to 1, with starting value 0.5
@@ -96,8 +94,6 @@ shmanipulate(curve(dbeta(x, alpha, beta), 0, 1), alpha = c(1, 100), beta = c(1, 
 ```
 
 ### Maybe you like histograms?
-
-This usage can be handy for looking at samples from a posterior distribution.
 
 ``` r
 data(quakes)

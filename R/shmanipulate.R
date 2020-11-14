@@ -174,6 +174,11 @@ pad_options = function(options, ...)
 #' Easily manipulate a plot using controls like sliders, drop-down lists and
 #' date pickers.
 #'
+#' \code{shmanip} and \code{shmanipulate} do the same thing, but \code{shmanip}
+#' runs as a gadget (i.e. in the RStudio Viewer pane) by default and with
+#' controls on the left of the plot, while \code{shmanipulate} runs in a new
+#' window by default and with controls on the bottom.
+#'
 #' @param expr an expression that evaluates to a plot using base plotting
 #' functions, \code{ggplot}, etc.
 #' @param ... variables within the \code{expr} expression to be manipulated.
@@ -214,11 +219,14 @@ pad_options = function(options, ...)
 #' @param options a \code{list} containing further settings:
 #' \describe{
 #'   \item{\code{position}}{where the controls are positioned relative to the
-#'   plot; either \code{"bottom"} (default), \code{"top"}, \code{"left"}, or
-#'   \code{"right"}.}
+#'   plot; either \code{"bottom"} (default for \code{shmanipulate}), \code{"top"},
+#'   \code{"left"} (default for \code{shmanip}), or \code{"right"}.}
 #'   \item{\code{ncol}}{if \code{position} is \code{"top"} or \code{"bottom"},
 #'   the number of columns to distribute controls across; can be \code{1} (default),
 #'   \code{2}, or \code{3}.}
+#'   \item{\code{gadget}}{\code{FALSE} (default for \code{shmanipulate}) to run in a
+#'   new window, or \code{TRUE} (default for \code{shmanip}) to run as a gadget, i.e.
+#'   in the RStudio viewer pane.}
 #' }
 #'
 #' @export
@@ -265,12 +273,14 @@ pad_options = function(options, ...)
 #' shmanipulate(if (x == y) hist(quakes[[x]], xlab = x) else plot(quakes[[x]], quakes[[y]], xlab = x, ylab = y),
 #'     x = names(quakes), y = names(quakes))
 #' }
+#' @rdname shmanipulate
 shmanipulate = function(expr, ..., options = list(), .envir = parent.frame())
 {
     # Process options
     options = pad_options(options,
         ncol = 1,
-        position = "bottom"
+        position = "bottom",
+        gadget = FALSE
     );
 
     # Read named and unnamed (list) arguments
@@ -320,5 +330,23 @@ shmanipulate = function(expr, ..., options = list(), .envir = parent.frame())
     }
 
     # Run app
-    shiny::shinyApp(ui, server)
+    if (options$gadget) {
+        shiny::runGadget(ui, server)
+    } else {
+        shiny::shinyApp(ui, server)
+    }
+}
+
+#' @rdname shmanipulate
+#' @export
+shmanip = function(expr, ..., options = list(), .envir = parent.frame())
+{
+    # Process options
+    options = pad_options(options,
+        ncol = 1,
+        position = "left",
+        gadget = TRUE
+    );
+
+    shmanipulate(expr, ..., options, .envir)
 }
