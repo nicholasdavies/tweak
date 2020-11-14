@@ -11,6 +11,8 @@ parse_control = function(x)
         list(type = "numeric", init = x)
     } else if (length(x) == 1 & is.character(x)) {
         list(type = "text", init = x)
+    } else if (length(x) > 1 & is.character(x)) {
+        list(type = "select", choices = as.list(x), init = NULL)
     } else if (length(x) == 1 & class(x) == "Date") {
         list(type = "date", init = x)
     } else if (is.numeric(x)) {
@@ -187,7 +189,9 @@ pad_options = function(options, ...)
 #'         \code{max} (see examples).}
 #'         \item{\code{y = list(...)} for a fixed set of string options
 #'         in a dropdown menu. If the \code{list} has names, these will
-#'         be shown. The first element is selected by default.}
+#'         be shown. The first element is selected by default. For
+#'         convenience, a character vector with more than one element
+#'         will also be interpreted as a dropdown menu.}
 #'         \item{\code{z = TRUE} or \code{z = FALSE} for a
 #'         logical value controlled by a checkbox.}
 #'         \item{\code{foo = "Some text"} for a character
@@ -251,6 +255,14 @@ pad_options = function(options, ...)
 #'     B = c(0, 10, 0.25),       # slider from 0 to 10, with step 0.25
 #'     C = c(0, -1000, 1000, 50) # slider from -1000 to 1000, with starting value 0 and step 50
 #' )
+#'
+#' # shmanipulate plus curve
+#' shmanipulate(curve(dbeta(x, alpha, beta), 0, 1), alpha = c(1, 100), beta = c(1, 100))
+#'
+#' # Quickly explore a numeric data.frame
+#' data(quakes)
+#' shmanipulate(if (x == y) hist(quakes[[x]], xlab = x) else plot(quakes[[x]], quakes[[y]], xlab = x, ylab = y),
+#'     x = names(quakes), y = names(quakes))
 #' }
 shmanipulate = function(expr, ..., options = list(), .envir = parent.frame())
 {
