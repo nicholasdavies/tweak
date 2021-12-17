@@ -8,7 +8,7 @@ Description: A function for manipulating a plot from within RStudio or another S
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Imports: 
     shiny
 URL: https://github.com/nicholasdavies/shmanipulate
