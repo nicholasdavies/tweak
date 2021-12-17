@@ -10,17 +10,18 @@ Easily manipulate a plot using controls like sliders, drop-down lists and date p
 There are other packages for doing this, like [**manipulate**](https://www.rdocumentation.org/packages/manipulate/versions/1.0.1)
 and [**manipulateWidget**](https://cran.r-project.org/web/packages/manipulateWidget/vignettes/manipulateWidgets.html). I found that
 with **manipulate** I would sometimes run out of space for controls when there were lots of variables; **manipulateWidget** was better 
-for this, but for both packages I found the syntax a bit hard to remember, especially during what I found to be the most common use 
-cases for manipulating plots, i.e. diagnosing errors and trying out some new code (when I didn't want to be diving into documentation).
+at handling this, but for both packages I found the syntax a bit hard to remember, especially during what I found to be the most common 
+use cases for manipulating plots, i.e. diagnosing errors and trying out some new code (when I was normally too distracted to be diving 
+into documentation).
 
-**shmanipulate**'s syntax is supposed to be a bit easier to remember. The package only exports one function* (also called `shmanipulate`), 
-and uses what I find to be a natural "shorthand" syntax for specifying controls for plot manipulation, e.g. `x = c(0, 1)` to control 
-the variable `x` using a numeric slider going from 0 to 1, or `y = list("dog", "cat")` to control the variable `y` using a dropdown 
-list with two options. The basic syntax looks like this:
+**shmanipulate**'s syntax is supposed to be a bit easier to remember than these alternatives. The package only exports one function* 
+(also called `shmanipulate`), and uses what I find to be a natural "shorthand" syntax for specifying controls for plot manipulation, 
+e.g. `x = c(0, 1)` to specify the variable `x` using a numeric slider going from 0 to 1, or `y = list("dog", "cat")` to specify the 
+variable `y` using a dropdown list with two options. The basic syntax looks like this:
 
 ``` r
 shmanipulate({
-   # plotting code goes here...
+   # plotting code depending on x and y goes here...
    }, x = c(0, 1), y = list("dog", "cat")
 )
 ```
@@ -57,15 +58,25 @@ shmanipulate( { x = 0:10; plot(A * x^2 + B * x + C, col = if(blue) 4 else 1, mai
 )
 ```
 
-In full, you can use:
+This makes a plot of a quadratic equation where the coefficients `A`, `B`, and `C` can be manipulated with different
+controls, plus where you can edit the title of the plot and the colour of the points, with the latter two manipulations
+being kind of useless but serving to illustrate the kinds of controls supported by **shmanipulate**.
+
+When specifying parameters to manipulate, you can use:
 - `x = c(min, max)` for a numeric slider between min and max; you can optionally provide a starting value before min and/or a step value after max (see "Different kinds of numeric sliders" below).
-- `y = list(...)` for a fixed set of options in a dropdown menu. If the list has names, these will be shown; otherwise, the list values converted to character are shown. The first element is selected by default. For convenience, a vector of strings with more than one element (e.g. `c("one", "two")`) will also be interpreted as a dropdown menu. 
+- `y = list(...)` for a fixed set of options in a dropdown menu. If the list has names, these will be shown in the menu; otherwise, the list values converted to character are shown. The first element is selected by default. For convenience, a vector of strings (e.g. `c("one", "two")`) will also be interpreted as a dropdown menu, so long as it has more than one element. 
 - `z = TRUE` or `z = FALSE` for a logical value controlled by a checkbox.
 - `foo = "Some text"` for a character string controlled by text input.
 - `bar = 123.456` for a numeric value controlled by text input.
 - `baz = as.Date("2020-01-01")` for a Date object with a calendar input.
 
 ### Specifying controls: the flexible way
+
+If you want complete control over how controls are displayed, you can pass Shiny widgets as unnamed arguments to
+`shmanipulate`, with the `inputId` parameter specifying the variable name within the plot expression. This lets you
+do things you can't do with the shorthand syntax, like setting a label for the widget which differs from the
+variable name, using the `label` argument. This might be useful if you're really familiar with Shiny syntax. 
+Personally, though, I wouldn't bother.
 
 ``` r
 library(shiny)
@@ -87,11 +98,16 @@ shmanipulate({
 
 ### Different kinds of numeric sliders
 
+The full syntax for numeric sliders is `c(start_value, min, max, step_size)` where `start_value` and `step_size` are optional. 
+This seems like it would create ambiguous cases—since if you provide three values, they could either be `c(start_value, min, max)` 
+or `c(min, max, step_size)`—but because `shmanipulate` assumes `start_value >= min` and `min < max`, it's always possible 
+for `shmanipulate` to tell which of these two cases is intended.
+
 ``` r
 shmanipulate({ x = 0:100; plot(A * x^2 + B * x + C, ylim = c(-2000, 2000)) },
     A = c(0.5, 0, 1),         # slider from 0 to 1, with starting value 0.5
-    B = c(0, 10, 0.25),       # slider from 0 to 10, with step 0.25
-    C = c(0, -1000, 1000, 50) # slider from -1000 to 1000, with starting value 0 and step 50
+    B = c(0, 10, 0.25),       # slider from 0 to 10, with step size 0.25
+    C = c(0, -1000, 1000, 50) # slider from -1000 to 1000, with starting value 0 and step size 50
 )
 ```
 
@@ -105,6 +121,8 @@ shmanipulate(curve(dbeta(x, alpha, beta), 0, 1), alpha = c(1, 100), beta = c(1, 
 ```
 
 ### Maybe you like histograms?
+
+The following usage can be handy for looking at samples from a posterior distribution.
 
 ``` r
 data(quakes)
