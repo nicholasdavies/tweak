@@ -108,26 +108,26 @@ gridify = function(controls, ncol, position)
 }
 
 # Lay out plot and controls
-layout = function(controls, ncol, position)
+layout = function(controls, ncol, position, plot_height)
 {
     if (position == "top") {
         list(
             shiny::fluidRow(gridify(controls, ncol, position)),
-            shiny::fluidRow(shiny::plotOutput("plot"))
+            shiny::fluidRow(shiny::plotOutput("plot", height = plot_height))
         )
     } else if (position == "bottom") {
         list(
-            shiny::fluidRow(shiny::plotOutput("plot")),
+            shiny::fluidRow(shiny::plotOutput("plot", height = plot_height)),
             shiny::fluidRow(gridify(controls, ncol, position))
         )
     } else if (position == "left") {
         shiny::fluidRow(
             gridify(controls, ncol, position),
-            shiny::column(8, shiny::plotOutput("plot"))
+            shiny::column(8, shiny::plotOutput("plot", height = plot_height))
         )
     } else if (position == "right") {
         shiny::fluidRow(
-            shiny::column(8, shiny::plotOutput("plot")),
+            shiny::column(8, shiny::plotOutput("plot", height = plot_height)),
             gridify(controls, ncol, position)
         )
     } else {
@@ -227,6 +227,8 @@ pad_options = function(options, ...)
 #'   \item{\code{gadget}}{\code{FALSE} (default for \code{shmanipulate}) to run in a
 #'   new window, or \code{TRUE} (default for \code{shmanip}) to run as a gadget, i.e.
 #'   in the RStudio viewer pane.}
+#'   \item{\code{plot_height}}{Height of the plot in pixels, with \code{400} as
+#'   the default.}
 #' }
 #'
 #' @export
@@ -280,7 +282,8 @@ shmanipulate = function(expr, ..., options = list(), .envir = parent.frame())
     options = pad_options(options,
         ncol = 1,
         position = "bottom",
-        gadget = FALSE
+        gadget = FALSE,
+        plot_height = "400px"
     );
 
     # Read named and unnamed (list) arguments
@@ -306,7 +309,7 @@ shmanipulate = function(expr, ..., options = list(), .envir = parent.frame())
     }
 
     # Define page layout
-    ui = shiny::fluidPage(layout(controls, options$ncol, options$position));
+    ui = shiny::fluidPage(layout(controls, options$ncol, options$position, options$plot_height));
 
     # Simple server to render plot based on updates to inputs
     expr_txt = deparse(substitute(expr));
@@ -345,7 +348,8 @@ shmanip = function(expr, ..., options = list(), .envir = parent.frame())
     options = pad_options(options,
         ncol = 1,
         position = "left",
-        gadget = TRUE
+        gadget = TRUE,
+        plot_height = "400px"
     );
 
     shmanipulate(expr, ..., options, .envir)

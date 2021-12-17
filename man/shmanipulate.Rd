@@ -60,6 +60,8 @@ These can be specified in one of two ways:
   \item{\code{gadget}}{\code{FALSE} (default for \code{shmanipulate}) to run in a
   new window, or \code{TRUE} (default for \code{shmanip}) to run as a gadget, i.e.
   in the RStudio viewer pane.}
+  \item{\code{plot_height}}{Height of the plot in pixels, with \code{400} as
+  the default.}
 }}
 }
 \description{
