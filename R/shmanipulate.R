@@ -99,8 +99,15 @@ gridify = function(controls, ncol, position)
                 shiny::column(4, slice(controls, 1, 2, 3)),
                 shiny::column(4, slice(controls, 2, 3, 3))
             )
+        } else if (ncol == 4) {
+            list(
+                shiny::column(3, slice(controls, 0, 1, 4)),
+                shiny::column(3, slice(controls, 1, 2, 4)),
+                shiny::column(3, slice(controls, 2, 3, 4)),
+                shiny::column(3, slice(controls, 3, 4, 4))
+            )
         } else {
-            stop("shmanipulate: ncol must be 1, 2, or 3.");
+            stop("shmanipulate: ncol must be 1, 2, 3, or 4.");
         }
     } else if (position %in% c("left", "right")) {
         shiny::column(4, controls)
@@ -223,7 +230,7 @@ pad_options = function(options, ...)
 #'   \code{"left"} (default for \code{shmanip}), or \code{"right"}.}
 #'   \item{\code{ncol}}{if \code{position} is \code{"top"} or \code{"bottom"},
 #'   the number of columns to distribute controls across; can be \code{1} (default),
-#'   \code{2}, or \code{3}.}
+#'   \code{2}, \code{3}, or \code{4}.}
 #'   \item{\code{gadget}}{\code{FALSE} (default for \code{shmanipulate}) to run in a
 #'   new window, or \code{TRUE} (default for \code{shmanip}) to run as a gadget, i.e.
 #'   in the RStudio viewer pane.}

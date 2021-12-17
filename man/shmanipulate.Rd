@@ -56,7 +56,7 @@ These can be specified in one of two ways:
   \code{"left"} (default for \code{shmanip}), or \code{"right"}.}
   \item{\code{ncol}}{if \code{position} is \code{"top"} or \code{"bottom"},
   the number of columns to distribute controls across; can be \code{1} (default),
-  \code{2}, or \code{3}.}
+  \code{2}, \code{3}, or \code{4}.}
   \item{\code{gadget}}{\code{FALSE} (default for \code{shmanipulate}) to run in a
   new window, or \code{TRUE} (default for \code{shmanip}) to run as a gadget, i.e.
   in the RStudio viewer pane.}
