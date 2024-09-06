@@ -1,25 +1,25 @@
 # Interpret x as control spec
 parse_control = function(x)
 {
-    if ("shiny.tag" %in% class(x)) {
+    if (inherits(x, "shiny.tag")) {
         x
-    } else if (is.list(x) | (length(x) > 1 & is.character(x))) {
+    } else if (is.list(x) || (length(x) > 1 && is.character(x))) {
         values = unname(x);
         choices = as.character(seq_along(x));
         names(choices) = if (!is.null(names(x))) names(x) else as.character(x);
         list(type = "select", choices = choices, values = values, init = NULL)
-    } else if (length(x) == 1 & is.logical(x)) {
+    } else if (length(x) == 1 && is.logical(x)) {
         list(type = "checkbox", init = x)
-    } else if (length(x) == 1 & is.numeric(x)) {
+    } else if (length(x) == 1 && is.numeric(x)) {
         list(type = "numeric", init = x)
-    } else if (length(x) == 1 & is.character(x)) {
+    } else if (length(x) == 1 && is.character(x)) {
         list(type = "text", init = x)
-    } else if (length(x) == 1 & class(x) == "Date") {
+    } else if (length(x) == 1 && inherits(x, "Date")) {
         list(type = "date", init = x)
     } else if (is.numeric(x)) {
         parse_slider(x)
     } else {
-        stop("shmanipulate: cannot interpret control specification ", x);
+        stop("tweak: cannot interpret control specification ", x);
     }
 }
 
@@ -35,12 +35,12 @@ parse_slider = function(x)
     } else if (length(x) == 4) {
         slider = list(type = "slider", min = x[2], max = x[3], init = x[1], by = x[4]);
     } else {
-        stop("shmanipulate: malformed slider (expecting 2, 3, or 4 numeric values).");
+        stop("tweak: malformed slider (expecting 2, 3, or 4 numeric values).");
     }
 
-    if (slider$min >= slider$max) { stop("shmanipulate: slider max must be greater than min."); }
-    if (slider$init < slider$min || slider$init > slider$max) { stop("shmanipulate: slider start must be between min and max.") }
-    if (slider$by < 0) { stop("shmanipulate: slider by must be non-negative."); }
+    if (slider$min >= slider$max) { stop("tweak: slider max must be greater than min."); }
+    if (slider$init < slider$min || slider$init > slider$max) { stop("tweak: slider start must be between min and max.") }
+    if (slider$by < 0) { stop("tweak: slider by must be non-negative."); }
 
     # Set by to something sensible
     if (slider$by == 0) {
@@ -54,7 +54,7 @@ parse_slider = function(x)
 # Search a shiny.tag class object for an inputId
 get_input_id = function(x)
 {
-    if (!("shiny.tag" %in% class(x))) {
+    if (!inherits(x, "shiny.tag")) {
         return (NULL)
     }
 
@@ -107,7 +107,7 @@ gridify = function(controls, ncol, position)
                 shiny::column(3, slice(controls, 3, 4, 4))
             )
         } else {
-            stop("shmanipulate: ncol must be 1, 2, 3, or 4.");
+            stop("tweak: ncol must be 1, 2, 3, or 4.");
         }
     } else if (position %in% c("left", "right")) {
         shiny::column(4, controls)
@@ -138,14 +138,14 @@ layout = function(controls, ncol, position, plot_height)
             gridify(controls, ncol, position)
         )
     } else {
-        stop('shmanipulate: position (of controls) must be "top", "bottom", "left", or "right".')
+        stop('tweak: position (of controls) must be "top", "bottom", "left", or "right".')
     }
 }
 
 # Turn control spec into realized shiny tag structure
 realize_control = function(name, x)
 {
-    if ("shiny.tag" %in% class(x)) {
+    if (inherits(x, "shiny.tag")) {
         x
     } else if (x$type == "select") {
         shiny::selectInput(inputId = name, label = name, choices = x$choices, selected = x$init);
@@ -160,7 +160,7 @@ realize_control = function(name, x)
     } else if (x$type == "slider") {
         shiny::sliderInput(inputId = name, label = name, min = x$min, max = x$max, value = x$init, step = ifelse(x$by == 0, NULL, x$by))
     } else {
-        stop("shmanipulate: unknown control type.");
+        stop("tweak: unknown control type.");
     }
 }
 
@@ -181,18 +181,13 @@ pad_options = function(options, ...)
 #' Easily manipulate a plot using controls like sliders, drop-down lists and
 #' date pickers.
 #'
-#' \code{shmanip} and \code{shmanipulate} do the same thing, but \code{shmanip}
-#' runs as a gadget (i.e. in the RStudio Viewer pane) by default and with
-#' controls on the left of the plot, while \code{shmanipulate} runs in a new
-#' window by default and with controls on the bottom.
-#'
 #' @param expr an expression that evaluates to a plot using base plotting
 #' functions, \code{ggplot}, etc.
 #' @param ... variables within the \code{expr} expression to be manipulated.
 #'   These can be specified in one of two ways:
 #'   \describe{
 #'     \item{\strong{The easy way}}{The easy way is to specify the variables
-#'     to be manipulated as named arguments to \code{shmanipulate}. How you
+#'     to be manipulated as named arguments to \code{tweak}. How you
 #'     specify the value of each argument determines the default value of the
 #'     variable and how it is manipulated. Examples for each:
 #'       \itemize{
@@ -226,26 +221,33 @@ pad_options = function(options, ...)
 #' @param options a \code{list} containing further settings:
 #' \describe{
 #'   \item{\code{position}}{where the controls are positioned relative to the
-#'   plot; either \code{"bottom"} (default for \code{shmanipulate}), \code{"top"},
-#'   \code{"left"} (default for \code{shmanip}), or \code{"right"}.}
+#'   plot; either \code{"bottom"} (default), \code{"top"}, \code{"left"}, or
+#'   \code{"right"}.}
 #'   \item{\code{ncol}}{if \code{position} is \code{"top"} or \code{"bottom"},
 #'   the number of columns to distribute controls across; can be \code{1} (default),
 #'   \code{2}, \code{3}, or \code{4}.}
-#'   \item{\code{gadget}}{\code{FALSE} (default for \code{shmanipulate}) to run in a
-#'   new window, or \code{TRUE} (default for \code{shmanip}) to run as a gadget, i.e.
-#'   in the RStudio viewer pane.}
+#'   \item{\code{gadget}}{\code{FALSE} (default) to run in a new window, or
+#'   \code{TRUE} to run as a gadget, i.e. in the RStudio viewer pane.}
 #'   \item{\code{plot_height}}{Height of the plot in pixels, with \code{400} as
 #'   the default.}
 #' }
+#' @param .envir environment in which to evaluate \code{expr}.
 #'
 #' @export
 #' @examples
 #' \dontrun{
 #' # Specifying controls: the easy way
-#' shmanipulate( { x = 0:10; plot(A * x^2 + B * x + C, col = if(blue) 4 else 1, main = plot_title, ylim = c(-5, 10)) },
-#'     A = c(0, 0.1), # a slider from 0 to 0.1
-#'     B = 1,       # a numeric text input with starting value 1
-#'     C = list(one = 1, two = 2, three = 3), # a dropdown list with named values
+#' tweak({
+#'         x = 0:10;
+#'         plot(A * x^2 + B * x + C,
+#'             col = if (blue) "blue" else "black",
+#'             main = plot_title,
+#'             ylim = c(-5, 10)
+#'         )
+#'     },
+#'     A = c(0, 0.1), # slider from 0 to 0.1
+#'     B = 1,         # numeric text input with starting value 1
+#'     C = list(one = 1, two = 2, three = 3), # dropdown list with named values
 #'     plot_title = "Example title", # freeform text input
 #'     blue = FALSE                  # checkbox
 #' )
@@ -254,36 +256,49 @@ pad_options = function(options, ...)
 #' library(shiny)
 #' library(ggplot2)
 #'
-#' shmanipulate({
-#'         dat = data.frame(date = start_date + 0:(n_days - 1),
-#'             value = start_value * exp(0:(n_days - 1) * growth_rate) + rnorm(n_days, 0, noise));
+#' tweak({
+#'         dat = data.frame(
+#'             date = start_date + 0:(n_days - 1),
+#'             value = start_value * exp(0:(n_days - 1) * growth_rate) +
+#'                 rnorm(n_days, 0, noise)
+#'         )
 #'         ggplot(dat) +
 #'             geom_line(aes(x = date, y = value))
 #'     },
-#'     dateInput(inputId = "start_date", label = "Start date", value = "2020-01-01"),
-#'     numericInput(inputId = "start_value", label = "Starting value", value = 1, min = 0, max = 10, step = 1),
-#'     sliderInput(inputId = "growth_rate", label = "Growth rate", min = 0, max = 1, value = 0, step = 0.01),
-#'     numericInput(inputId = "n_days", label = "Number of days", value = 30, min = 1, max = 60, step = 1),
-#'     sliderInput(inputId = "noise", label = "Noise", min = 0, max = 1, value = 0, step = 0.01)
+#'     dateInput(inputId = "start_date",
+#'         label = "Start date", value = "2020-01-01"),
+#'     numericInput(inputId = "start_value",
+#'         label = "Starting value", value = 1, min = 0, max = 10, step = 1),
+#'     sliderInput(inputId = "growth_rate",
+#'         label = "Growth rate", min = 0, max = 1, value = 0, step = 0.01),
+#'     numericInput(inputId = "n_days",
+#'         label = "Number of days", value = 30, min = 1, max = 60, step = 1),
+#'     sliderInput(inputId = "noise",
+#'         label = "Noise", min = 0, max = 1, value = 0, step = 0.01)
 #' )
 #'
 #' # Different kinds of numeric sliders
-#' shmanipulate({ x = 0:100; plot(A * x^2 + B * x + C, ylim = c(-2000, 2000)) },
+#' tweak({ x = 0:100; plot(A * x^2 + B * x + C, ylim = c(-2000, 2000)) },
 #'     A = c(0.5, 0, 1),         # slider from 0 to 1, with starting value 0.5
 #'     B = c(0, 10, 0.25),       # slider from 0 to 10, with step 0.25
-#'     C = c(0, -1000, 1000, 50) # slider from -1000 to 1000, with starting value 0 and step 50
+#'     C = c(0, -1000, 1000, 50) # slider from -1000 to 1000, starting value 0 and step 50
 #' )
 #'
-#' # shmanipulate plus curve
-#' shmanipulate(curve(dbeta(x, alpha, beta), 0, 1), alpha = c(1, 100), beta = c(1, 100))
+#' # tweak plus curve
+#' tweak(curve(dbeta(x, alpha, beta), 0, 1), alpha = c(1, 100), beta = c(1, 100))
 #'
 #' # Quickly explore a numeric data.frame
 #' data(quakes)
-#' shmanipulate(if (x == y) hist(quakes[[x]], xlab = x) else plot(quakes[[x]], quakes[[y]], xlab = x, ylab = y),
+#' tweak(
+#'     if (x == y) {
+#'         hist(quakes[[x]], xlab = x)
+#'     } else {
+#'         plot(quakes[[x]], quakes[[y]], xlab = x, ylab = y)
+#'     },
 #'     x = names(quakes), y = names(quakes))
 #' }
-#' @rdname shmanipulate
-shmanipulate = function(expr, ..., options = list(), .envir = parent.frame())
+#' @rdname tweak
+tweak = function(expr, ..., options = list(), .envir = parent.frame())
 {
     # Process options
     options = pad_options(options,
@@ -312,7 +327,7 @@ shmanipulate = function(expr, ..., options = list(), .envir = parent.frame())
     arg_names = unname(sapply(controls, get_input_id));
 
     if (any(is.null(arg_names))) {
-        stop("shmanipulate: could not find names for all parameters.");
+        stop("tweak: could not find names for all parameters.");
     }
 
     # Define page layout
@@ -329,7 +344,7 @@ shmanipulate = function(expr, ..., options = list(), .envir = parent.frame())
 
             # convert dropdown list values from character to originally specified type
             for (i in seq_along(args)) {
-                if (!"shiny.tag" %in% class(args[[i]]) && args[[i]]$type == "select") {
+                if (!inherits(args[[i]], "shiny.tag") && args[[i]]$type == "select") {
                     args2[[i]] = args[[i]]$values[[as.integer(args2[[i]])]];
                 }
             }
@@ -345,19 +360,4 @@ shmanipulate = function(expr, ..., options = list(), .envir = parent.frame())
     } else {
         shiny::shinyApp(ui, server)
     }
-}
-
-#' @rdname shmanipulate
-#' @export
-shmanip = function(expr, ..., options = list(), .envir = parent.frame())
-{
-    # Process options
-    options = pad_options(options,
-        ncol = 1,
-        position = "left",
-        gadget = TRUE,
-        plot_height = "400px"
-    );
-
-    shmanipulate(expr, ..., options, .envir)
 }

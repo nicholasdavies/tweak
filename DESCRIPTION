@@ -1,6 +1,6 @@
-Package: shmanipulate
+Package: tweak
 Type: Package
-Title: Easily manipulate a plot using controls like sliders, drop-down lists and date pickers.
+Title: Easily manipulate a plot using controls like sliders, drop-down lists and date pickers
 Version: 0.2.0
 Authors@R: person("Nicholas G.", "Davies", email = "nicholas.davies@lshtm.ac.uk", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-1740-1412"))
 Description: A function for manipulating a plot from within RStudio or another Shiny-compatible R environment,
@@ -8,8 +8,8 @@ Description: A function for manipulating a plot from within RStudio or another S
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.3.1
 Imports: 
     shiny
-URL: https://github.com/nicholasdavies/shmanipulate
-BugReports: https://github.com/nicholasdavies/shmanipulate/issues
+URL: https://github.com/nicholasdavies/tweak
+BugReports: https://github.com/nicholasdavies/tweak/issues
