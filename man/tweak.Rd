@@ -35,8 +35,11 @@ These can be specified in one of two ways:
       controlled by text input.}
       \item{\code{baz = as.Date("2020-01-01")} for a
       \code{Date} object with a calendar input.}
+      \item{An unnamed character string followed by any of the above
+      assigns the string as the label of the control, e.g.
+      \code{"Slope", b = c(-10, 10)}}
     }
-  See below for an example.
+  See below for examples.
   }
   \item{\strong{The more flexible way}}{The more flexible way
   is to specify the variables to be manipulated as input controls
@@ -127,6 +130,7 @@ tweak(
     } else {
         plot(quakes[[x]], quakes[[y]], xlab = x, ylab = y)
     },
-    x = names(quakes), y = names(quakes))
+    "Variable 1", x = names(quakes),
+    "Variable 2", y = names(quakes))
 }
 }

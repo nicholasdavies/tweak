@@ -115,7 +115,7 @@ gridify = function(controls, ncol, position)
 }
 
 # Lay out plot and controls
-layout = function(controls, ncol, position, plot_height)
+tweak_layout = function(controls, ncol, position, plot_height)
 {
     if (position == "top") {
         list(
@@ -143,22 +143,22 @@ layout = function(controls, ncol, position, plot_height)
 }
 
 # Turn control spec into realized shiny tag structure
-realize_control = function(name, x)
+realize_control = function(name, label, x)
 {
     if (inherits(x, "shiny.tag")) {
         x
     } else if (x$type == "select") {
-        shiny::selectInput(inputId = name, label = name, choices = x$choices, selected = x$init);
+        shiny::selectInput(inputId = name, label = label, choices = x$choices, selected = x$init);
     } else if (x$type == "checkbox") {
-        shiny::checkboxInput(inputId = name, label = name, value = x$init);
+        shiny::checkboxInput(inputId = name, label = label, value = x$init);
     } else if (x$type == "numeric") {
-        shiny::numericInput(inputId = name, label = name, value = x$init);
+        shiny::numericInput(inputId = name, label = label, value = x$init);
     } else if (x$type == "text") {
-        shiny::textInput(inputId = name, label = name, value = x$init);
+        shiny::textInput(inputId = name, label = label, value = x$init);
     } else if (x$type == "date") {
-        shiny::dateInput(inputId = name, label = name, value = x$init);
+        shiny::dateInput(inputId = name, label = label, value = x$init);
     } else if (x$type == "slider") {
-        shiny::sliderInput(inputId = name, label = name, min = x$min, max = x$max, value = x$init, step = ifelse(x$by == 0, NULL, x$by))
+        shiny::sliderInput(inputId = name, label = label, min = x$min, max = x$max, value = x$init, step = ifelse(x$by == 0, NULL, x$by))
     } else {
         stop("tweak: unknown control type.");
     }
@@ -174,6 +174,35 @@ pad_options = function(options, ...)
         }
     }
     return (options)
+}
+
+# Read a list of arguments as shorthand input notation
+# Returns list with:
+#  $item -- list of lists describing elements
+#  $html -- list of parsed html content
+process_input = function(args)
+{
+    # Read arguments and separate out any control labels
+    label_indices = which(sapply(args, rlang::is_string) & rlang::names2(args) == "");
+    labels = names(args);
+    if (length(label_indices)) {
+        labels = labels[-label_indices];
+        labels_override = unlist(args[label_indices]);
+        args = args[-label_indices];
+        label_indices = label_indices - seq_along(label_indices) + 1;
+        labels[label_indices] = labels_override;
+    }
+
+    # Turn arguments into input controls
+    args = lapply(args, parse_control);
+    controls = mapply(realize_control, names(args), labels, args, SIMPLIFY = FALSE);
+    arg_names = unname(sapply(controls, get_input_id));
+
+    if (any(is.null(arg_names))) {
+        stop("tweak: could not find names for all parameters.");
+    }
+
+    return (list(item = args, html = controls))
 }
 
 #' Manipulate a plot
@@ -208,8 +237,11 @@ pad_options = function(options, ...)
 #'         controlled by text input.}
 #'         \item{\code{baz = as.Date("2020-01-01")} for a
 #'         \code{Date} object with a calendar input.}
+#'         \item{An unnamed character string followed by any of the above
+#'         assigns the string as the label of the control, e.g.
+#'         \code{"Slope", b = c(-10, 10)}}
 #'       }
-#'     See below for an example.
+#'     See below for examples.
 #'     }
 #'     \item{\strong{The more flexible way}}{The more flexible way
 #'     is to specify the variables to be manipulated as input controls
@@ -295,7 +327,8 @@ pad_options = function(options, ...)
 #'     } else {
 #'         plot(quakes[[x]], quakes[[y]], xlab = x, ylab = y)
 #'     },
-#'     x = names(quakes), y = names(quakes))
+#'     "Variable 1", x = names(quakes),
+#'     "Variable 2", y = names(quakes))
 #' }
 #' @rdname tweak
 tweak = function(expr, ..., options = list(), .envir = parent.frame())
@@ -308,49 +341,30 @@ tweak = function(expr, ..., options = list(), .envir = parent.frame())
         plot_height = "400px"
     );
 
-    # Read named and unnamed (list) arguments
-    ellipses = list(...);
-    args = list();
-    for (i in seq_along(ellipses)) {
-        if (!is.null(names(ellipses)) && names(ellipses)[i] != "") {
-            args = c(args, list(ellipses[[i]]));
-            names(args)[i] = names(ellipses)[i];
-        } else {
-            args = c(args, list(ellipses[[i]]));
-            names(args)[i] = ""
-        }
-    }
-
-    # Turn ... arguments into input controls
-    args = lapply(args, parse_control);
-    controls = mapply(realize_control, names(args), args, SIMPLIFY = FALSE);
-    arg_names = unname(sapply(controls, get_input_id));
-
-    if (any(is.null(arg_names))) {
-        stop("tweak: could not find names for all parameters.");
-    }
+    # Process inputs
+    ctrl = process_input(list(...))
 
     # Define page layout
-    ui = shiny::fluidPage(layout(controls, options$ncol, options$position, options$plot_height));
+    ui = shiny::fluidPage(tweak_layout(ctrl$html, options$ncol, options$position, options$plot_height));
 
     # Simple server to render plot based on updates to inputs
-    expr_txt = deparse(substitute(expr));
+    expr_q = substitute(expr);
     server = function(input, output, session)
     {
         output$plot = shiny::renderPlot({
             # get server values
-            args2 = lapply(arg_names, function(name) input[[name]]);
-            names(args2) = arg_names;
+            args2 = lapply(names(ctrl$item), function(name) input[[name]]);
+            names(args2) = names(ctrl$item);
 
             # convert dropdown list values from character to originally specified type
-            for (i in seq_along(args)) {
-                if (!inherits(args[[i]], "shiny.tag") && args[[i]]$type == "select") {
-                    args2[[i]] = args[[i]]$values[[as.integer(args2[[i]])]];
+            for (i in seq_along(ctrl$item)) {
+                if (!inherits(ctrl$item[[i]], "shiny.tag") && ctrl$item[[i]]$type == "select") {
+                    args2[[i]] = ctrl$item[[i]]$values[[as.integer(args2[[i]])]];
                 }
             }
 
             # evaluate plotting command
-            eval(parse(text = expr_txt), args2, .envir)
+            eval(expr_q, args2, .envir)
         });
     }
 
