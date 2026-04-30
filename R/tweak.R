@@ -37,7 +37,7 @@
 #'       }
 #'     To give a custom label to the control, put the label on the left side of
 #'     a `~` formula, e.g.
-#'     \code{b = "Slope" ~ c(-10, 10)}}
+#'     \code{b = "Slope" ~ c(-10, 10)}
 #'     See below for examples.
 #'     }
 #'     \item{\strong{The more flexible way}}{The more flexible way
