@@ -39,10 +39,9 @@ These can be specified in one of two ways:
       controlled by text input.}
       \item{\code{baz = as.Date("2020-01-01")} for a
       \code{Date} object with a calendar input.}
-      \item{An unnamed character string followed by any of the above
-      assigns the string as the label of the control, e.g.
-      \code{"Slope", b = c(-10, 10)}}
     }
+  To give a custom label to the control, put the label on the left side of
+  a `~` formula, e.g. \code{b = "Slope" ~ c(-10, 10)}.
   See below for examples.
   }
   \item{\strong{The more flexible way}}{The more flexible way
@@ -60,8 +59,8 @@ These can be specified in one of two ways:
   plot; either \code{"bottom"} (default), \code{"top"}, \code{"left"}, or
   \code{"right"}.}
   \item{\code{ncol}}{if \code{position} is \code{"top"} or \code{"bottom"},
-  the number of columns to distribute controls across; can be \code{1} (default),
-  \code{2}, \code{3}, or \code{4}.}
+  the number of columns to distribute controls across; can be \code{NA}
+  (automatic, default), \code{1}, \code{2}, \code{3}, or \code{4}.}
   \item{\code{gadget}}{\code{FALSE} (default) to run in a new window, or
   \code{TRUE} to run as a gadget, i.e. in the RStudio viewer pane.}
   \item{\code{plot_height}}{Height of the plot in pixels, with \code{400} as

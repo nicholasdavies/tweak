@@ -4,7 +4,7 @@
 \alias{layout_stack}
 \title{Lay out in tabs}
 \usage{
-layout_stack(input_id)
+layout_stack(input_id = NULL)
 }
 \description{
 Lay out in tabs
