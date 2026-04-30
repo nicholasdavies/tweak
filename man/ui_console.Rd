@@ -4,7 +4,7 @@
 \alias{ui_console}
 \title{Console ui}
 \usage{
-ui_console(d)
+ui_console(plan, bs_theme_args)
 }
 \description{
 Console ui

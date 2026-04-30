@@ -4,7 +4,7 @@
 \alias{design_sidebar}
 \title{Set design to sidebar}
 \usage{
-design_sidebar()
+design_sidebar(theme = NULL, ...)
 }
 \description{
 Set design to sidebar

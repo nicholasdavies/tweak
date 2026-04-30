@@ -1,218 +1,11 @@
-# Interpret x as control spec
-parse_control = function(x)
-{
-    if (inherits(x, "shiny.tag")) {
-        x
-    } else if (is.list(x) || (length(x) > 1 && is.character(x))) {
-        values = unname(x);
-        choices = as.character(seq_along(x));
-        names(choices) = if (!is.null(names(x))) names(x) else as.character(x);
-        list(type = "select", choices = choices, values = values, init = NULL)
-    } else if (length(x) == 1 && is.logical(x)) {
-        list(type = "checkbox", init = x)
-    } else if (length(x) == 1 && is.numeric(x)) {
-        list(type = "numeric", init = x)
-    } else if (length(x) == 1 && is.character(x)) {
-        list(type = "text", init = x)
-    } else if (length(x) == 1 && inherits(x, "Date")) {
-        list(type = "date", init = x)
-    } else if (is.numeric(x)) {
-        parse_slider(x)
-    } else {
-        stop("tweak: cannot interpret control specification ", x);
-    }
-}
-
-# Parse numeric vector of 2, 3, or 4 elements into a list with named elements min, max, init, and by.
-parse_slider = function(x)
-{
-    if (length(x) == 2) {
-        slider = list(type = "slider", min = x[1], max = x[2], init = x[1], by = 0);
-    } else if (length(x) == 3 && x[1] >= x[2]) {
-        slider = list(type = "slider", min = x[2], max = x[3], init = x[1], by = 0);
-    } else if (length(x) == 3) {
-        slider = list(type = "slider", min = x[1], max = x[2], init = x[1], by = x[3]);
-    } else if (length(x) == 4) {
-        slider = list(type = "slider", min = x[2], max = x[3], init = x[1], by = x[4]);
-    } else {
-        stop("tweak: malformed slider (expecting 2, 3, or 4 numeric values).");
-    }
-
-    if (slider$min >= slider$max) { stop("tweak: slider max must be greater than min."); }
-    if (slider$init < slider$min || slider$init > slider$max) { stop("tweak: slider start must be between min and max.") }
-    if (slider$by < 0) { stop("tweak: slider by must be non-negative."); }
-
-    # Set by to something sensible
-    if (slider$by == 0) {
-        magnitude = floor(max(log10(abs(c(slider$min, slider$max)))));
-        slider$by = 10 ^ (magnitude - 2);
-    }
-
-    return (slider)
-}
-
-# Search a shiny.tag class object for an inputId
-get_input_id = function(x)
-{
-    if (!inherits(x, "shiny.tag")) {
-        return (NULL)
-    }
-
-    if (x$name %in% c('input', 'select', 'button', 'div') && !is.null(x$attribs$id)) {
-        return (x$attribs$id)
-    }
-
-    for (xx in x$children) {
-        result = get_input_id(xx);
-        if (!is.null(result)) {
-            return (result)
-        }
-    }
-
-    return (NULL)
-}
-
-# Slice list in quantiles [a/d, b/d)
-slice = function(l, a, b, d)
-{
-    n = length(l);
-    i = (n * a) / d + 1;
-    j = (n * b) / d + 1;
-    ind = seq_along(l);
-    return (l[ind >= i & ind < j])
-}
-
-# Put controls in a grid
-gridify = function(controls, ncol, position)
-{
-    if (position %in% c("top", "bottom")) {
-        if (ncol == 1) {
-            shiny::column(4, controls, offset = 4)
-        } else if (ncol == 2) {
-            list(
-                shiny::column(4, slice(controls, 0, 1, 2), offset = 2),
-                shiny::column(4, slice(controls, 1, 2, 2))
-            )
-        } else if (ncol == 3) {
-            list(
-                shiny::column(4, slice(controls, 0, 1, 3)),
-                shiny::column(4, slice(controls, 1, 2, 3)),
-                shiny::column(4, slice(controls, 2, 3, 3))
-            )
-        } else if (ncol == 4) {
-            list(
-                shiny::column(3, slice(controls, 0, 1, 4)),
-                shiny::column(3, slice(controls, 1, 2, 4)),
-                shiny::column(3, slice(controls, 2, 3, 4)),
-                shiny::column(3, slice(controls, 3, 4, 4))
-            )
-        } else {
-            stop("tweak: ncol must be 1, 2, 3, or 4.");
-        }
-    } else if (position %in% c("left", "right")) {
-        shiny::column(4, controls)
-    }
-}
-
-# Lay out plot and controls
-tweak_layout = function(controls, ncol, position, plot_height)
-{
-    if (position == "top") {
-        list(
-            shiny::fluidRow(gridify(controls, ncol, position)),
-            shiny::fluidRow(shiny::plotOutput("plot", height = plot_height))
-        )
-    } else if (position == "bottom") {
-        list(
-            shiny::fluidRow(shiny::plotOutput("plot", height = plot_height)),
-            shiny::fluidRow(gridify(controls, ncol, position))
-        )
-    } else if (position == "left") {
-        shiny::fluidRow(
-            gridify(controls, ncol, position),
-            shiny::column(8, shiny::plotOutput("plot", height = plot_height))
-        )
-    } else if (position == "right") {
-        shiny::fluidRow(
-            shiny::column(8, shiny::plotOutput("plot", height = plot_height)),
-            gridify(controls, ncol, position)
-        )
-    } else {
-        stop('tweak: position (of controls) must be "top", "bottom", "left", or "right".')
-    }
-}
-
-# Turn control spec into realized shiny tag structure
-realize_control = function(name, label, x)
-{
-    if (inherits(x, "shiny.tag")) {
-        x
-    } else if (x$type == "select") {
-        shiny::selectInput(inputId = name, label = label, choices = x$choices, selected = x$init);
-    } else if (x$type == "checkbox") {
-        shiny::checkboxInput(inputId = name, label = label, value = x$init);
-    } else if (x$type == "numeric") {
-        shiny::numericInput(inputId = name, label = label, value = x$init);
-    } else if (x$type == "text") {
-        shiny::textInput(inputId = name, label = label, value = x$init);
-    } else if (x$type == "date") {
-        shiny::dateInput(inputId = name, label = label, value = x$init);
-    } else if (x$type == "slider") {
-        shiny::sliderInput(inputId = name, label = label, min = x$min, max = x$max, value = x$init, step = ifelse(x$by == 0, NULL, x$by))
-    } else {
-        stop("tweak: unknown control type.");
-    }
-}
-
-# Pad out options list with default values
-pad_options = function(options, ...)
-{
-    defaults = list(...);
-    for (nm in names(defaults)) {
-        if (is.null(options[[nm]])) {
-            options[[nm]] = defaults[[nm]];
-        }
-    }
-    return (options)
-}
-
-# Read a list of arguments as shorthand input notation
-# Returns list with:
-#  $item -- list of lists describing elements
-#  $html -- list of parsed html content
-process_input = function(args)
-{
-    # Read arguments and separate out any control labels
-    label_indices = which(sapply(args, rlang::is_string) & rlang::names2(args) == "");
-    labels = names(args);
-    if (length(label_indices)) {
-        labels = labels[-label_indices];
-        labels_override = unlist(args[label_indices]);
-        args = args[-label_indices];
-        label_indices = label_indices - seq_along(label_indices) + 1;
-        labels[label_indices] = labels_override;
-    }
-
-    # Turn arguments into input controls
-    args = lapply(args, parse_control);
-    controls = mapply(realize_control, names(args), labels, args, SIMPLIFY = FALSE);
-    arg_names = unname(sapply(controls, get_input_id));
-
-    if (any(is.null(arg_names))) {
-        stop("tweak: could not find names for all parameters.");
-    }
-
-    return (list(item = args, html = controls))
-}
-
 #' Manipulate a plot
 #'
 #' Easily manipulate a plot using controls like sliders, drop-down lists and
 #' date pickers.
 #'
-#' @param expr an expression that evaluates to a plot using base plotting
+#' @param .expr an expression that evaluates to a plot using base plotting
 #' functions, \code{ggplot}, etc.
-#' @param ... variables within the \code{expr} expression to be manipulated.
+#' @param ... variables within the \code{.expr} expression to be manipulated.
 #'   These can be specified in one of two ways:
 #'   \describe{
 #'     \item{\strong{The easy way}}{The easy way is to specify the variables
@@ -231,22 +24,27 @@ process_input = function(args)
 #'         will also be interpreted as a dropdown menu.}
 #'         \item{\code{z = TRUE} or \code{z = FALSE} for a
 #'         logical value controlled by a checkbox.}
+#'         \item{\code{a = NA} for an integer that will count up by one each
+#'         time a button is pressed. Note that this must be logical \code{NA},
+#'         e.g. \code{NA_character_}, \code{NA_real_}, etc. will not make a
+#'         button.}
 #'         \item{\code{foo = "Some text"} for a character
 #'         string controlled by text input.}
 #'         \item{\code{bar = 123.456} for a numeric value
 #'         controlled by text input.}
 #'         \item{\code{baz = as.Date("2020-01-01")} for a
 #'         \code{Date} object with a calendar input.}
-#'         \item{An unnamed character string followed by any of the above
-#'         assigns the string as the label of the control, e.g.
-#'         \code{"Slope", b = c(-10, 10)}}
 #'       }
+#'     To give a custom label to the control, put the label on the left side of
+#'     a `~` formula, e.g.
+#'     \code{b = "Slope" ~ c(-10, 10)}}
 #'     See below for examples.
 #'     }
 #'     \item{\strong{The more flexible way}}{The more flexible way
 #'     is to specify the variables to be manipulated as input controls
 #'     using the \code{shiny} package. In this case the names of the
-#'     arguments are ignored, and the variable names are taken from
+#'     arguments are ignored (to avoid confusion, keep arguments unnamed
+#'     that are Shiny input controls), and the variable names are taken from
 #'     the \code{inputId} argument to the Shiny input control. An
 #'     example is below. }
 #'   }
@@ -256,18 +54,17 @@ process_input = function(args)
 #'   plot; either \code{"bottom"} (default), \code{"top"}, \code{"left"}, or
 #'   \code{"right"}.}
 #'   \item{\code{ncol}}{if \code{position} is \code{"top"} or \code{"bottom"},
-#'   the number of columns to distribute controls across; can be \code{1} (default),
-#'   \code{2}, \code{3}, or \code{4}.}
+#'   the number of columns to distribute controls across; can be \code{NA}
+#'   (automatic, default), \code{1}, \code{2}, \code{3}, or \code{4}.}
 #'   \item{\code{gadget}}{\code{FALSE} (default) to run in a new window, or
 #'   \code{TRUE} to run as a gadget, i.e. in the RStudio viewer pane.}
 #'   \item{\code{plot_height}}{Height of the plot in pixels, with \code{400} as
 #'   the default.}
 #' }
-#' @param .envir environment in which to evaluate \code{expr}.
+#' @param .envir environment in which to evaluate \code{.expr}.
 #'
-#' @export
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' # Specifying controls: the easy way
 #' tweak({
 #'         x = 0:10;
@@ -327,28 +124,28 @@ process_input = function(args)
 #'     } else {
 #'         plot(quakes[[x]], quakes[[y]], xlab = x, ylab = y)
 #'     },
-#'     "Variable 1", x = names(quakes),
-#'     "Variable 2", y = names(quakes))
+#'     x = "Variable 1" ~ names(quakes),
+#'     y = "Variable 2" ~ names(quakes))
 #' }
-#' @rdname tweak
-tweak = function(expr, ..., options = list(), .envir = parent.frame())
+#' @export
+tweak = function(.expr, ..., options = list(), .envir = parent.frame())
 {
     # Process options
     options = pad_options(options,
-        ncol = 1,
+        ncol = NA,
         position = "bottom",
         gadget = FALSE,
         plot_height = "400px"
     );
 
     # Process inputs
-    ctrl = process_input(list(...))
+    ctrl = make_inputs(list(...), .envir, allow_shiny = TRUE)
 
     # Define page layout
     ui = shiny::fluidPage(tweak_layout(ctrl$html, options$ncol, options$position, options$plot_height));
 
     # Simple server to render plot based on updates to inputs
-    expr_q = substitute(expr);
+    expr_q = substitute(.expr);
     server = function(input, output, session)
     {
         output$plot = shiny::renderPlot({
@@ -373,5 +170,69 @@ tweak = function(expr, ..., options = list(), .envir = parent.frame())
         shiny::runGadget(ui, server)
     } else {
         shiny::shinyApp(ui, server)
+    }
+}
+
+# Put controls in a grid
+gridify = function(controls, ncol, position)
+{
+    if (position %in% c("top", "bottom")) {
+        if (ncol == 1) {
+            shiny::column(4, controls, offset = 4)
+        } else if (ncol == 2) {
+            list(
+                shiny::column(4, slice(controls, 0, 1, 2), offset = 2),
+                shiny::column(4, slice(controls, 1, 2, 2))
+            )
+        } else if (ncol == 3) {
+            list(
+                shiny::column(4, slice(controls, 0, 1, 3)),
+                shiny::column(4, slice(controls, 1, 2, 3)),
+                shiny::column(4, slice(controls, 2, 3, 3))
+            )
+        } else if (ncol == 4) {
+            list(
+                shiny::column(3, slice(controls, 0, 1, 4)),
+                shiny::column(3, slice(controls, 1, 2, 4)),
+                shiny::column(3, slice(controls, 2, 3, 4)),
+                shiny::column(3, slice(controls, 3, 4, 4))
+            )
+        } else {
+            stop("tweak: ncol must be 1, 2, 3, or 4.");
+        }
+    } else if (position %in% c("left", "right")) {
+        shiny::column(4, controls)
+    }
+}
+
+# Lay out plot and controls
+tweak_layout = function(controls, ncol, position, plot_height)
+{
+    if (is.na(ncol)) {
+        ncol = max(1, min(4, ceiling(length(controls) / 4)))
+    }
+
+    if (position == "top") {
+        list(
+            shiny::fluidRow(gridify(controls, ncol, position)),
+            shiny::fluidRow(shiny::plotOutput("plot", height = plot_height))
+        )
+    } else if (position == "bottom") {
+        list(
+            shiny::fluidRow(shiny::plotOutput("plot", height = plot_height)),
+            shiny::fluidRow(gridify(controls, ncol, position))
+        )
+    } else if (position == "left") {
+        shiny::fluidRow(
+            gridify(controls, ncol, position),
+            shiny::column(8, shiny::plotOutput("plot", height = plot_height))
+        )
+    } else if (position == "right") {
+        shiny::fluidRow(
+            shiny::column(8, shiny::plotOutput("plot", height = plot_height)),
+            gridify(controls, ncol, position)
+        )
+    } else {
+        stop('tweak: position (of controls) must be "top", "bottom", "left", or "right".')
     }
 }

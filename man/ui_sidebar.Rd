@@ -4,7 +4,7 @@
 \alias{ui_sidebar}
 \title{Sidebar ui}
 \usage{
-ui_sidebar(d)
+ui_sidebar(plan, bs_theme_args)
 }
 \description{
 Sidebar ui

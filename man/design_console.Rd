@@ -4,7 +4,7 @@
 \alias{design_console}
 \title{Set design to console}
 \usage{
-design_console()
+design_console(theme = NULL, ...)
 }
 \description{
 Set design to console

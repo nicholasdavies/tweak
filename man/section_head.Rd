@@ -4,7 +4,7 @@
 \alias{section_head}
 \title{Section setters}
 \usage{
-section_head()
+section_head(label = NULL)
 }
 \description{
 Section setters

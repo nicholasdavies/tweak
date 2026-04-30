@@ -12,6 +12,7 @@ RoxygenNote: 7.3.2
 Imports: 
     shiny,
     rlang,
-    bslib
+    bslib,
+    thematic
 URL: https://github.com/nicholasdavies/tweak
 BugReports: https://github.com/nicholasdavies/tweak/issues

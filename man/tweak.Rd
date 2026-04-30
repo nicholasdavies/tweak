@@ -4,13 +4,13 @@
 \alias{tweak}
 \title{Manipulate a plot}
 \usage{
-tweak(expr, ..., options = list(), .envir = parent.frame())
+tweak(.expr, ..., options = list(), .envir = parent.frame())
 }
 \arguments{
-\item{expr}{an expression that evaluates to a plot using base plotting
+\item{.expr}{an expression that evaluates to a plot using base plotting
 functions, \code{ggplot}, etc.}
 
-\item{...}{variables within the \code{expr} expression to be manipulated.
+\item{...}{variables within the \code{.expr} expression to be manipulated.
 These can be specified in one of two ways:
 \describe{
   \item{\strong{The easy way}}{The easy way is to specify the variables
@@ -29,6 +29,10 @@ These can be specified in one of two ways:
       will also be interpreted as a dropdown menu.}
       \item{\code{z = TRUE} or \code{z = FALSE} for a
       logical value controlled by a checkbox.}
+      \item{\code{a = NA} for an integer that will count up by one each
+      time a button is pressed. Note that this must be logical \code{NA},
+      e.g. \code{NA_character_}, \code{NA_real_}, etc. will not make a
+      button.}
       \item{\code{foo = "Some text"} for a character
       string controlled by text input.}
       \item{\code{bar = 123.456} for a numeric value
@@ -44,7 +48,8 @@ These can be specified in one of two ways:
   \item{\strong{The more flexible way}}{The more flexible way
   is to specify the variables to be manipulated as input controls
   using the \code{shiny} package. In this case the names of the
-  arguments are ignored, and the variable names are taken from
+  arguments are ignored (to avoid confusion, keep arguments unnamed
+  that are Shiny input controls), and the variable names are taken from
   the \code{inputId} argument to the Shiny input control. An
   example is below. }
 }}
@@ -63,14 +68,14 @@ These can be specified in one of two ways:
   the default.}
 }}
 
-\item{.envir}{environment in which to evaluate \code{expr}.}
+\item{.envir}{environment in which to evaluate \code{.expr}.}
 }
 \description{
 Easily manipulate a plot using controls like sliders, drop-down lists and
 date pickers.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 # Specifying controls: the easy way
 tweak({
         x = 0:10;
@@ -130,7 +135,7 @@ tweak(
     } else {
         plot(quakes[[x]], quakes[[y]], xlab = x, ylab = y)
     },
-    "Variable 1", x = names(quakes),
-    "Variable 2", y = names(quakes))
+    x = "Variable 1" ~ names(quakes),
+    y = "Variable 2" ~ names(quakes))
 }
 }

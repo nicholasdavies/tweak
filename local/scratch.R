@@ -1,7 +1,6 @@
 # X section
 # X group
 # X Label controls
-# X Document labelling controls
 # X print.tweak.dashboard
 # X inputs
 # X html
@@ -22,198 +21,86 @@
 # apply to other components of tweak, IF these are not already being run
 # through shiny/bslib which are probably smart enough to work it out)
 
-# What's the game plan. Calculate is up and running. I need a group_stack()
-# type of thing, plus a panel() kind of thing
-
 library(tweak)
 library(shiny)
 library(ggplot2)
 
-class(tweak.group() + tweak.group())
-
-I think the problem is this.
-bit + bit + bit --> (bit + bit) + bit --> group + bit --> group(bit1, bit2, bit3)
-
-BUT
-
-(bit + bit) + bit  -- ALSO --> group(bit1, bit2, bit3)
-when what we want is group(group(bit1, bit2), bit3)
-
-layout_stack() +
-    (inputs(...))
-    (inputs(...))
-    (inputs(...) + inputs(...))
-
+ndot = 0
 dashboard() +
-    section_head() +
-    h1("My app") +
-    section_main() +
     calculate(dots = {
-        dots = data.frame(x = runif(100, -0.75, 0.75))
-        dots$y = a * dots$x + 0.1 * rnorm(100)
-        return (dots)
+        dots = data.frame(x = runif(100 + ndot * 100, -0.75, 0.75))
+        dots$y = a * dots$x + b + 0.1 * rnorm(100 + ndot * 100)
+        dots
     }) +
-    output_plot({
-        ggplot() +
-            geom_abline(slope = a, intercept = b) +
-            geom_point(data = dots, aes(x, y)) +
-            xlim(-1, 1) +
-            ylim(-1, 1)
-    }) +
-    section_conf() +
-    layout_stack() +
-    panel(title = "Tab 1",
-        layout_cols() +
-        panel(title = "Hello", icon = "gear",
-            inputs("Slope", a = c(1, -1, 1))
-        ) +
-        panel(title = "Howdy", icon = "gears",
-            inputs("Intercept", b = c(0, -1, 1))
-        )
-    ) +
-    panel(title = "Tab 2",
-        h1("Hello there")
-    ) +
-    section_foot() +
-    p("Made by some person") +
-    design_console()
-
-
-dashboard() +
-    section_head() +
-    h1("My app") +
+    section_head("My app") +
     section_main() +
-    calculate(dots = {
-        dots = data.frame(x = runif(100, -0.75, 0.75))
-        dots$y = a * dots$x + 0.1 * rnorm(100)
-        return (dots)
-    }) +
-    output_plot({
-        ggplot() +
-            geom_abline(slope = a, intercept = b) +
-            geom_point(data = dots, aes(x, y)) +
-            xlim(-1, 1) +
-            ylim(-1, 1)
-    }) +
-    section_conf() +
-    layout_stack() +
-    panel(title = "Tab 1") +
-        layout_cols() +
-        panel(title = "Hello", icon = "gear") +
-            inputs("Slope", a = c(1, -1, 1)) +
-        panel(title = "Howdy", icon = "gears") +
-            inputs("Intercept", b = c(0, -1, 1)) +
-        layout_end() +
-    panel(title = "Tab 2") +
-        h1("Hello there") +
-    layout_end() +
-    section_foot() +
-    p("Made by some person") +
-    design_console()
-
-
-
-dashboard(
-    section_head(
-        h1("My app")
-    ),
-    section_main(
-        calculate(dots = {
-            dots = data.frame(x = runif(100, -0.75, 0.75))
-            dots$y = a * dots$x + 0.1 * rnorm(100)
-            return (dots)
-        }),
-        output_plot({
+        dash_html(h2(HTML(paste0("y = ", a, "x ", if (b >= 0) "+ " else "&minus; ", abs(b))))) +
+        dash_plot(myplot = {
             ggplot() +
                 geom_abline(slope = a, intercept = b) +
                 geom_point(data = dots, aes(x, y)) +
-                xlim(-1, 1) +
-                ylim(-1, 1)
-        }),
-    ),
-    section_conf(
-        layout_stack(
-            panel("Tab 1",
-                layout_cols(
-                    panel("Hello", icon("gear"),
-                        inputs("Slope", a = c(1, -1, 1))
-                    ),
-                    panel("Howdy", icon("gears"),
-                        inputs("Intercept", b = c(0, -1, 1))
-                    )
-                )
-            ),
-            panel("Tab 2",
-                h1("Hello there")
-            )
-        )
-    ),
-    section_foot(
-        p("Made by some person")
-    ),
-    design_console()
+                coord_cartesian(xlim = c(-1, 1), ylim = c(-1, 1))
+        }) +
+    section_conf() +
+        panel(title = "Settings 1", icon = "gears") +
+            dash_input(a = "Slope" ~ c(1, -1, 1)) +
+            dash_input(b = "Intercept" ~ c(0, -1, 1)) +
+            dash_update("dots", "Update dots") +
+            dash_input(ndot = "Add dots" ~ NA) +
+        panel(title = "Settings 2", icon = "ghost") +
+            h1("Boo!") +
+    section_foot() +
+        p(HTML("&copy; 2025 some person")) +
+    design_console("yeti")
+
+# c(0, 1)       slider
+# list(...)     select
+# TRUE          check
+# "text"        text
+# 123.456       numeric
+# 2020-01-01    date
+#               button
+#
+
+spec
+View(spec)
+
+p = tweak:::make_plan(spec)
+View(p)
+
+# Things from covidm_shiny2 to implement:
+
+# Big tabs?
+
+# Help button
+div(id = "help_loc", style = "position: absolute; right: 10px; top: 10px",
+    bsButton("help_tooltips", label = HTML("Show help"), icon = icon("question-circle", "fa"), style = "info", size = "small", type = "toggle", value = FALSE)
 )
 
+# Compare button
+div(id = "compare_loc", style = "position: absolute; right: 112px; top: 10px",
+    bsButton("compare", label = HTML("Compare"), icon = icon("exchange-alt", "fa"), style = "info", size = "small", type = "toggle", value = TRUE)
+)
 
-dashboard() +
-    section_head() +
-    h1("My app") +
-    section_main() +
-    calculate(dots = {
-        dots = data.frame(x = runif(100, -0.75, 0.75))
-        dots$y = a * dots$x + 0.1 * rnorm(100)
-        return (dots)
-    }) +
-    output_plot({
-        ggplot() +
-            geom_abline(slope = a, intercept = b) +
-            geom_point(data = dots, aes(x, y)) +
-            xlim(-1, 1) +
-            ylim(-1, 1)
-    }) +
-    section_conf() +
-    layout_stack() +
-    (
-        panel("Tab 1") +
-        layout_cols() +
-        (
-            panel(title = "Hello", icon = "gear") +
-            inputs("Slope", a = c(1, -1, 1))
-        ) +
-        (
-            panel(title = "Howdy", icon = "gears") +
-            inputs("Intercept", b = c(0, -1, 1))
-        )
-    ) +
-    (
-        panel("Tab 2") +
-        h1("Hello there")
-    ) +
-    section_foot() +
-    p("Made by some person") +
-    design_console()
+# Intervention rectangles
 
-tweak:::make_ui(d)
+# X Action button
 
-zero = 0
+# Hierarchical selector; i.e., admin 0, admin 1, etc.
 
-dashboard() +
-    section_head() +
-        h1("My dashboard") +
-    section_conf() +
-        inputs("Slope", a = c(1, -1, 1),
-            "Intercept", b = c(0, -2, 2),
-            "Point", point = list(c(1, 1), c(2, 2))) +
-    section_main() +
-        output_plot({
-            ggplot(data.frame(x = zero:3, y = zero:3)) +
-                annotate("point", x = point[1], y = point[2]) +
-                geom_abline(slope = a, intercept = b) +
-                xlim(0, 3) + ylim(0, 3)
-        }) +
-    section_foot() +
-        p("Created by Samwise Gamgee") +
-    design_sidebar()
+# Nice location selector with Leaflet and demographics
+
+# Contact matrix selector
+
+# table. rHandsontableOutput?
+
+# dash_* functions for the built-in input types, as well as a
+# tweak.input(type = "custom", html = {...}, value = {...} (e.g. as done for dropdowns), ...)
+# for extending tweak, such as with contact matrix selector
+
+# download, upload, upload to table, action button
+
+# appropriate auto layout for head and foot
 
 # sections:
 #   head (panels e.g. about, help, other settings)

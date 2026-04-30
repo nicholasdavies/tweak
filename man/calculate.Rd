@@ -4,7 +4,7 @@
 \alias{calculate}
 \title{Calculate value}
 \usage{
-calculate(..., .envir = parent.frame())
+calculate(...)
 }
 \description{
 Calculate value
